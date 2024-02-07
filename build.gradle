@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+}
+
+group 'de.dertoaster'
+version '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_16
+    targetCompatibility = JavaVersion.VERSION_16
+}
+
+repositories {
+    mavenCentral()
+
+    flatDir {
+        dirs 'libs'
+    }
+
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+}
+
+dependencies {
+    implementation 'org.jetbrains:annotations:20.1.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    compileOnly "org.spigotmc:spigot-api:${SPIGOT_VERSION}"
+
+    //implementation name: "Movecraft_${MOVECRAFT_VERSION}.jar"
+    implementation files("libs/Movecraft_${MOVECRAFT_VERSION}.jar")
+}
+
+test {
+    useJUnitPlatform()
+}
