@@ -24,6 +24,9 @@ hs_err_pid*
 replay_pid*
 .project
 .classpath
+
+# Folders
 .gradle/
 .idea/
 .settings/
+bin/
