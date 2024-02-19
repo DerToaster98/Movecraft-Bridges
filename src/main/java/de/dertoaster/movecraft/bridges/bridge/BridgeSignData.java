@@ -1,6 +1,7 @@
 package de.dertoaster.movecraft.bridges.bridge;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -22,11 +23,13 @@ public record BridgeSignData(
 		String name,
 		String nextBridge,
 		// Forward, Vertical, Left/Right
-		Vector locationOffset,
+		byte offsetX,
+		byte offsetY,
+		byte offsetZ,
 		TileState blockState
 	) {
 	
-	public static Optional<BridgeSignData> tryFindBridgeOnCraft(final Craft craft, final String bridgeName) {
+	public static Optional<BridgeSignData> tryFindBridgeOnCraft(final Craft craft, final String bridgeName, Consumer<String> errorMessageHandler) {
 		if (craft == null || bridgeName == null || bridgeName.isBlank() || bridgeName.isEmpty()) {
 			return Optional.empty();
 		}
@@ -34,7 +37,7 @@ public record BridgeSignData(
 		for (MovecraftLocation ml : craft.getHitBox().asSet()) {
 			BlockState state = craft.getWorld().getBlockAt(ml.toBukkit(craft.getWorld())).getState();
 			if (state instanceof org.bukkit.block.Sign sign) {
-				Optional<BridgeSignData> tempResult = tryGetBridgeSignData(sign);
+				Optional<BridgeSignData> tempResult = tryGetBridgeSignData(sign, errorMessageHandler);
 				if (tempResult.isPresent() && tempResult.get().isExitFor(bridgeName)) {
 					return tempResult;
 				}
@@ -47,60 +50,81 @@ public record BridgeSignData(
 		return ChatColor.stripColor(this.name).equals(ChatColor.stripColor(bridge));
 	}
 	
-	public static Optional<BridgeSignData> tryGetBridgeSignData(final Location location, final World world) {
-		return tryGetBridgeSignData(world.getBlockAt(location));
+	public static Optional<BridgeSignData> tryGetBridgeSignData(final Location location, final World world, Consumer<String> errorMessageHandler) {
+		return tryGetBridgeSignData(world.getBlockAt(location), errorMessageHandler);
 	}
 	
-	public static Optional<BridgeSignData> tryGetBridgeSignData(Block blockAt) {
+	public static Optional<BridgeSignData> tryGetBridgeSignData(Block blockAt, Consumer<String> errorMessageHandler) {
 		if (blockAt.getState() instanceof org.bukkit.block.Sign sign) {
-			return tryGetBridgeSignData(sign);
+			return tryGetBridgeSignData(sign, errorMessageHandler);
 		}
 		return Optional.empty();
 	}
-
-	public static Optional<BridgeSignData> tryGetBridgeSignData(org.bukkit.block.Sign sign) {
-		String[] lines = sign.getLines();
+	
+	public static boolean validateSign(org.bukkit.block.Sign sign, Consumer<String> errorMessageHandler) {
+		return validateSign(sign.getLines(), errorMessageHandler);
+	}
+	
+	public static boolean validateSign(String[] lines, Consumer<String> errorMessageHandler) {
 		if (!lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_HEADER].equals(Constants.BRIDGE_SIGN_HEADER)) {
-			return Optional.empty();
+			return false;
 		}
 		if (lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME].isBlank() || lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME].isEmpty()) {
-			return Optional.empty();
+			return false;
 		}
-		Vector v = new Vector(0, 0, 0);
 		if (!(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER].isBlank() || lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER].isEmpty())) {
 			String vec = lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER];
 			String[] vecArr = vec.split(",");
+			
 			if (vecArr.length == 3) {
 				for (int i = 0; i < vecArr.length; i++) {
 					String entry = vecArr[i];
 					try {
-						int tmp = Integer.parseInt(entry);
-						switch(i) {
-							case 0:
-								v.setX(tmp);
-								break;
-							case 1:
-								v.setY(tmp);
-								break;
-							case 2:
-								v.setZ(tmp);
-								break;
-							default:
-								break;
+						// Validate that it is a byte...
+						byte byteTmp = Byte.parseByte(entry);
+						if (Math.abs(byteTmp) > 8) {
+							// too big => log!
+							return false;
 						}
 					} catch(NumberFormatException nfe) {
-						return Optional.empty();
+						return false;
 					}
 				}
 			}
 		}
 		if ((lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE].isBlank() || lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE].isEmpty())) {
-			return Optional.empty();
+			return false;
 		}
 		if (ChatColor.stripColor(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME]).equals(ChatColor.stripColor(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE]))) {
+			return false;
+		}
+		return true;
+	}
+
+	public static Optional<BridgeSignData> tryGetBridgeSignData(org.bukkit.block.Sign sign, Consumer<String> errorMessageHandler) {
+		String[] lines = sign.getLines();
+		
+		if(!validateSign(lines, errorMessageHandler)) {
 			return Optional.empty();
-		} 
-		return Optional.of(new BridgeSignData(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME], lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE], v, sign));
+		}
+		
+		byte x = 0;
+		byte y = 0;
+		byte z = 0;
+		String[] vecArr = lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER].split(",");
+		
+		if (vecArr.length == 3) {
+			try {
+				x = Byte.parseByte(vecArr[0]);
+				y = Byte.parseByte(vecArr[1]);
+				z = Byte.parseByte(vecArr[2]);
+			} catch(NumberFormatException nfe) {
+				// it should never call this as it has been validated before!
+				return Optional.empty();
+			}
+		}
+		
+		return Optional.of(new BridgeSignData(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME], lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE], x, y, z, sign));
 	}
 
 	@Nullable
@@ -134,10 +158,10 @@ public record BridgeSignData(
 		int y = block.getBlockY();
 		int z = block.getBlockZ();
 		
-		y += this.locationOffset.getBlockY();
+		y += this.offsetY;
 		
 		// In facing direction
-		Vector shift = signDirection.normalize().multiply(this.locationOffset.getBlockX());
+		Vector shift = signDirection.normalize().multiply(this.offsetX);
 		
 		x += shift.getBlockX();
 		y += shift.getBlockY();
@@ -145,7 +169,7 @@ public record BridgeSignData(
 		
 		// Sideways
 		shift = shift.normalize().rotateAroundY(Math.PI / 2);
-		shift = shift.multiply(this.locationOffset.getBlockZ());
+		shift = shift.multiply(this.offsetZ);
 		
 		x += shift.getBlockX();
 		y += shift.getBlockY();
