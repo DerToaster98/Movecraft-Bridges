@@ -48,14 +48,16 @@ public class SignInteractListener implements Listener {
 		}
 		if (craft == null) {
 			// No craft found => return
+			event.getPlayer().sendMessage("Sign must be part of a piloted craft!");
 			event.setCancelled(true);
 		}
 		final Craft fcraft = craft;
 		
 		Optional<BridgeSignData> optBridge = BridgeSignData.tryGetBridgeSignData(event.getClickedBlock(), event.getPlayer()::sendMessage);
-		optBridge.ifPresent(bridge -> {
+		optBridge.ifPresentOrElse(bridge -> {
 			Optional<BridgeSignData> optTargetBridge = BridgeSignData.tryFindBridgeOnCraft(fcraft, bridge.nextBridge(), event.getPlayer()::sendMessage);
 			if(optTargetBridge.isEmpty()) {
+				event.getPlayer().sendMessage("Unable to find target bridge on craft!");
 				event.setCancelled(true);
 			} else {
 				BridgeSignData targetBridge = optTargetBridge.get();
@@ -65,6 +67,8 @@ public class SignInteractListener implements Listener {
 				// Prevent sign breaking
 				event.setCancelled(true);
 			}
+		}, () -> {
+			event.getPlayer().sendMessage("Failed to get bridge sign!");
 		});
 	}
 	

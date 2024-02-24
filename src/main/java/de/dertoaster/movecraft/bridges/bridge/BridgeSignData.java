@@ -70,6 +70,7 @@ public record BridgeSignData(
 			return false;
 		}
 		if (lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME].isBlank() || lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME].isEmpty()) {
+			errorMessageHandler.accept("Bridge must have a name!");
 			return false;
 		}
 		if (!(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER].isBlank() || lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER].isEmpty())) {
@@ -84,18 +85,22 @@ public record BridgeSignData(
 						byte byteTmp = Byte.parseByte(entry);
 						if (Math.abs(byteTmp) > 8) {
 							// too big => log!
+							errorMessageHandler.accept("Entered value " + entry + " is too big, allowed range is -8 to 8");
 							return false;
 						}
 					} catch(NumberFormatException nfe) {
+						errorMessageHandler.accept("Could not decipher value " + entry);
 						return false;
 					}
 				}
 			}
 		}
 		if ((lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE].isBlank() || lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE].isEmpty())) {
+			errorMessageHandler.accept("A target bridge must be specified!");
 			return false;
 		}
 		if (ChatColor.stripColor(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME]).equals(ChatColor.stripColor(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE]))) {
+			errorMessageHandler.accept("Bridge name and target bridge name must not be the same!");
 			return false;
 		}
 		return true;
@@ -120,6 +125,7 @@ public record BridgeSignData(
 				z = Byte.parseByte(vecArr[2]);
 			} catch(NumberFormatException nfe) {
 				// it should never call this as it has been validated before!
+				errorMessageHandler.accept("Specified vector " + lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER] + " is not valid!");
 				return Optional.empty();
 			}
 		}
