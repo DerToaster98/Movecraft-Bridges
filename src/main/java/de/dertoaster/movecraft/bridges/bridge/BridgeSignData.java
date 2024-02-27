@@ -23,9 +23,9 @@ public record BridgeSignData(
 		String name,
 		String nextBridge,
 		// Forward, Vertical, Left/Right
-		byte offsetX,
-		byte offsetY,
-		byte offsetZ,
+		float offsetX,
+		float offsetY,
+		float offsetZ,
 		TileState blockState
 	) {
 	
@@ -82,7 +82,7 @@ public record BridgeSignData(
 					String entry = vecArr[i];
 					try {
 						// Validate that it is a byte...
-						byte byteTmp = Byte.parseByte(entry);
+						float byteTmp = Float.parseFloat(entry);
 						if (Math.abs(byteTmp) > 8) {
 							// too big => log!
 							errorMessageHandler.accept("Entered value " + entry + " is too big, allowed range is -8 to 8");
@@ -113,16 +113,16 @@ public record BridgeSignData(
 			return Optional.empty();
 		}
 		
-		byte x = 0;
-		byte y = 0;
-		byte z = 0;
+		float x = 0;
+		float y = 0;
+		float z = 0;
 		String[] vecArr = lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER].split(",");
 		
 		if (vecArr.length == 3) {
 			try {
-				x = Byte.parseByte(vecArr[0]);
-				y = Byte.parseByte(vecArr[1]);
-				z = Byte.parseByte(vecArr[2]);
+				x = Float.parseFloat(vecArr[0]);
+				y = Float.parseFloat(vecArr[1]);
+				z = Float.parseFloat(vecArr[2]);
 			} catch(NumberFormatException nfe) {
 				// it should never call this as it has been validated before!
 				errorMessageHandler.accept("Specified vector " + lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_COORD_MODIFIER] + " is not valid!");
@@ -160,26 +160,29 @@ public record BridgeSignData(
 	}
 	
 	protected Location getEffectiveLocation(Vector signDirection, Location block) {
-		int x = block.getBlockX();
-		int y = block.getBlockY();
-		int z = block.getBlockZ();
+		// Get the centered location at that block
+		float x = block.getBlockX() + 0.5F;
+		float y = block.getBlockY() + 0.5F;
+		float z = block.getBlockZ() + 0.5F;
 		
-		y += this.offsetY;
-		
-		// In facing direction
-		Vector shift = signDirection.normalize().multiply(this.offsetX);
-		
-		x += shift.getBlockX();
-		y += shift.getBlockY();
-		z += shift.getBlockZ();
-		
-		// Sideways
-		shift = shift.normalize().rotateAroundY(Math.PI / 2);
-		shift = shift.multiply(this.offsetZ);
-		
-		x += shift.getBlockX();
-		y += shift.getBlockY();
-		z += shift.getBlockZ();
+		if (!(this.offsetX == 0 && this.offsetY == 0 && this.offsetZ == 0)) {
+			y += this.offsetY;
+			
+			// In facing direction
+			Vector shift = signDirection.normalize().multiply(this.offsetX);
+			
+			x += shift.getBlockX();
+			y += shift.getBlockY();
+			z += shift.getBlockZ();
+			
+			// Sideways
+			shift = shift.normalize().rotateAroundY(Math.PI / 2);
+			shift = shift.multiply(this.offsetZ);
+			
+			x += shift.getBlockX();
+			y += shift.getBlockY();
+			z += shift.getBlockZ();
+		}
 		
 		return new Location(block.getWorld(), x, y, z);
 	}
