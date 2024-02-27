@@ -54,6 +54,7 @@ public class SignInteractListener implements Listener {
 			// No craft found => return
 			event.getPlayer().sendMessage("Sign must be part of a piloted craft!");
 			event.setCancelled(true);
+			return;
 		}
 		final Craft fcraft = craft;
 		
