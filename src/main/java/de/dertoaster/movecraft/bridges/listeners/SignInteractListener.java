@@ -3,6 +3,7 @@ package de.dertoaster.movecraft.bridges.listeners;
 import java.util.Optional;
 
 import org.bukkit.Location;
+import org.bukkit.block.Sign;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -36,6 +37,9 @@ public class SignInteractListener implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
 	public final void onSignClick(@NotNull PlayerInteractEvent event) {
 		if (event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.LEFT_CLICK_BLOCK) {
+			return;
+		}
+		if (!(event.getClickedBlock().getState() instanceof Sign)) {
 			return;
 		}
 		Craft craft = null;
