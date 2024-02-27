@@ -56,6 +56,13 @@ public class SignInteractListener implements Listener {
 			event.setCancelled(true);
 			return;
 		}
+		// Check if craft is allowed to do that
+		if (!craft.getType().getBoolProperty(Constants.CraftFileEntries.KEY_BRIDGES_ALLOWED)) {
+			event.getPlayer().sendMessage("Bridges are not allowed on this craft!");
+			event.setCancelled(true);
+			return;
+		}
+		
 		final Craft fcraft = craft;
 		
 		Optional<BridgeSignData> optBridge = BridgeSignData.tryGetBridgeSignData(event.getClickedBlock(), event.getPlayer()::sendMessage);
