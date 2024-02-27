@@ -7,7 +7,7 @@ public class Constants {
     public static final String BRIDGE_SIGN_HEADER = "[Bridge]";
     
     public static class CraftFileEntries {
-    	public static final NamespacedKey KEY_BRIDGES_ALLOWED = new NamespacedKey(MovecraftBridges.getPlugin(MovecraftBridges.class), "allowBridges");
+    	public static final NamespacedKey KEY_BRIDGES_ALLOWED = new NamespacedKey(MovecraftBridges.getPlugin(MovecraftBridges.class), "allow_bridge_signs");
     }
     
     public static class BridgeSignLineIndizes {
