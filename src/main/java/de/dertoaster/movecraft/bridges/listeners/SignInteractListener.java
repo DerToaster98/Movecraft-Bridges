@@ -42,31 +42,37 @@ public class SignInteractListener implements Listener {
 		if (!(event.getClickedBlock().getState() instanceof Sign)) {
 			return;
 		}
-		Craft craft = null;
-		final MovecraftLocation movecraftLoc = MathUtils.bukkit2MovecraftLoc(event.getClickedBlock().getLocation());
-		for(PlayerCraft craftTmp : CraftManager.getInstance().getPlayerCraftsInWorld(event.getClickedBlock().getWorld())) {
-			if(craftTmp.getHitBox().contains(movecraftLoc)) {
-				craft = craftTmp;
-				break;
-			}
-		}
-		if (craft == null) {
-			// No craft found => return
-			event.getPlayer().sendMessage("Sign must be part of a piloted craft!");
-			event.setCancelled(true);
+		Sign sign = (Sign) event.getClickedBlock().getState();
+		if (!sign.getLines()[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_HEADER].equals(Constants.BRIDGE_SIGN_HEADER)) {
 			return;
 		}
-		// Check if craft is allowed to do that
-		if (!craft.getType().getBoolProperty(Constants.CraftFileEntries.KEY_BRIDGES_ALLOWED)) {
-			event.getPlayer().sendMessage("Bridges are not allowed on this craft!");
-			event.setCancelled(true);
-			return;
-		}
-		
-		final Craft fcraft = craft;
 		
 		Optional<BridgeSignData> optBridge = BridgeSignData.tryGetBridgeSignData(event.getClickedBlock(), event.getPlayer()::sendMessage);
 		optBridge.ifPresentOrElse(bridge -> {
+			
+			Craft craft = null;
+			final MovecraftLocation movecraftLoc = MathUtils.bukkit2MovecraftLoc(event.getClickedBlock().getLocation());
+			for(PlayerCraft craftTmp : CraftManager.getInstance().getPlayerCraftsInWorld(event.getClickedBlock().getWorld())) {
+				if(craftTmp.getHitBox().contains(movecraftLoc)) {
+					craft = craftTmp;
+					break;
+				}
+			}
+			if (craft == null) {
+				// No craft found => return
+				event.getPlayer().sendMessage("Sign must be part of a piloted craft!");
+				event.setCancelled(true);
+				return;
+			}
+			// Check if craft is allowed to do that
+			if (!craft.getType().getBoolProperty(Constants.CraftFileEntries.KEY_BRIDGES_ALLOWED)) {
+				event.getPlayer().sendMessage("Bridges are not allowed on this craft!");
+				event.setCancelled(true);
+				return;
+			}
+			
+			final Craft fcraft = craft;
+			
 			Optional<BridgeSignData> optTargetBridge = BridgeSignData.tryFindBridgeOnCraft(fcraft, bridge.nextBridge(), event.getPlayer()::sendMessage);
 			if(optTargetBridge.isEmpty()) {
 				event.getPlayer().sendMessage("Unable to find target bridge on craft!");
