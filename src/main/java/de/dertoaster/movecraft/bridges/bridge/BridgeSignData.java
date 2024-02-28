@@ -162,7 +162,7 @@ public record BridgeSignData(
 	protected Location getEffectiveLocation(Vector signDirection, Location block) {
 		// Get the centered location at that block
 		float x = block.getBlockX() + 0.5F;
-		float y = block.getBlockY() + 0.5F;
+		float y = block.getBlockY() + 0.01F;
 		float z = block.getBlockZ() + 0.5F;
 		
 		if (!(this.offsetX == 0 && this.offsetY == 0 && this.offsetZ == 0)) {

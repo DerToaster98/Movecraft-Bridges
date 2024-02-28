@@ -81,6 +81,9 @@ public class SignInteractListener implements Listener {
 				BridgeSignData targetBridge = optTargetBridge.get();
 				Location exitLoc = targetBridge.getEffectiveLocation();
 				
+				exitLoc.setPitch(event.getPlayer().getLocation().getPitch());
+				exitLoc.setYaw(event.getPlayer().getLocation().getYaw());
+				
 				event.getPlayer().teleport(exitLoc, TeleportCause.PLUGIN);
 				// Prevent sign breaking
 				event.setCancelled(true);
