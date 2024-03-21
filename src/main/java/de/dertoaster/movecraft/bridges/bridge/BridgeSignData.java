@@ -67,6 +67,7 @@ public record BridgeSignData(
 	
 	public static boolean validateSign(String[] lines, Consumer<String> errorMessageHandler) {
 		if (!lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_HEADER].equals(Constants.BRIDGE_SIGN_HEADER)) {
+			errorMessageHandler.accept("First line is not equals to " + Constants.BRIDGE_SIGN_HEADER);
 			return false;
 		}
 		if (lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME].isBlank() || lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME].isEmpty()) {
