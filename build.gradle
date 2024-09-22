@@ -43,6 +43,12 @@ java {
     }
 }
 
+tasks.jar {
+  manifest {
+    attributes["paperweight-mappings-namespace"] = "mojang"
+  }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 
