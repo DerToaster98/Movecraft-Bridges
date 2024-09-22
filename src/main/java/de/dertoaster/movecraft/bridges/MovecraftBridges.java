@@ -1,10 +1,10 @@
 package de.dertoaster.movecraft.bridges;
 
-import org.bukkit.plugin.java.JavaPlugin;
-
-import de.dertoaster.movecraft.bridges.listeners.SignInteractListener;
+import de.dertoaster.movecraft.bridges.sign.BridgeSign;
 import net.countercraft.movecraft.craft.type.CraftType;
 import net.countercraft.movecraft.craft.type.property.BooleanProperty;
+import net.countercraft.movecraft.sign.MovecraftSignRegistry;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class MovecraftBridges extends JavaPlugin {
 
@@ -13,7 +13,7 @@ public class MovecraftBridges extends JavaPlugin {
 		super.onEnable();
 		
 		// Register event listener
-		this.getServer().getPluginManager().registerEvents(new SignInteractListener(), this);
+		MovecraftSignRegistry.INSTANCE.register(Constants.BRIDGE_SIGN_HEADER, new BridgeSign());
 	}
 	
 	@Override
