@@ -1,5 +1,5 @@
 name: Movecraft-Bridges
-version: ${project.version}
+version: 1.1.0
 description: Adds bridges to movecraft
 authors: [DerToaster98]
 website: https://github.com/DerToaster98/Movecraft-Bridges
