@@ -13,7 +13,7 @@ public class MovecraftBridges extends JavaPlugin {
 		super.onEnable();
 		
 		// Register event listener
-		MovecraftSignRegistry.INSTANCE.register(Constants.BRIDGE_SIGN_HEADER, new BridgeSign());
+		MovecraftSignRegistry.INSTANCE.register(Constants.BRIDGE_SIGN_HEADER, new BridgeSign(), true);
 	}
 	
 	@Override
