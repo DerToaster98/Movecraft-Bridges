@@ -57,6 +57,11 @@ public class BridgeSign extends AbstractCraftSign {
             BridgeSignData targetBridge = optTargetBridge.get();
             Location exitLoc = targetBridge.getEffectiveLocation();
 
+            if (exitLoc == null) {
+                player.sendMessage("Can't find exit location");
+                return false;
+            }
+
             exitLoc.setPitch(player.getLocation().getPitch());
             exitLoc.setYaw(player.getLocation().getYaw());
 
