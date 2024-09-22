@@ -1,8 +1,0 @@
-name: Movecraft-Bridges
-depend: [Movecraft]
-version: ${project.version}
-api-version: 1.16
-description: Adds bridges to movecraft
-authors: [DerToaster98]
-website: https://github.com/DerToaster98/Movecraft-Bridges
-main: de.dertoaster.movecraft.bridges.MovecraftBridges
