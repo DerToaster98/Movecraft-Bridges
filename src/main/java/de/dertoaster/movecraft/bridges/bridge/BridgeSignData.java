@@ -42,7 +42,8 @@ public record BridgeSignData(
 						continue;
 					}
 
-					Optional<BridgeSignData> tempResult = tryGetBridgeSignData(wrapperTmp, errorMessageHandler);
+					// No output for those!
+					Optional<BridgeSignData> tempResult = tryGetBridgeSignData(wrapperTmp, (s) -> {});
 					if (tempResult.isPresent() && tempResult.get().isExitFor(bridgeName)) {
 						return tempResult;
 					}
