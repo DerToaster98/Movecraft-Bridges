@@ -1,22 +1,21 @@
 package de.dertoaster.movecraft.bridges.bridge;
 
-import java.util.Optional;
-import java.util.function.Consumer;
-
+import de.dertoaster.movecraft.bridges.Constants;
+import de.dertoaster.movecraft.bridges.sign.BridgeSign;
+import net.countercraft.movecraft.MovecraftLocation;
+import net.countercraft.movecraft.craft.Craft;
+import net.countercraft.movecraft.sign.AbstractCraftSign;
+import net.countercraft.movecraft.sign.MovecraftSignRegistry;
+import net.countercraft.movecraft.sign.SignListener;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.block.TileState;
-import org.bukkit.block.data.type.Sign;
-import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.Sign;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
-import de.dertoaster.movecraft.bridges.Constants;
-import net.countercraft.movecraft.MovecraftLocation;
-import net.countercraft.movecraft.craft.Craft;
-import net.md_5.bungee.api.ChatColor;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 // Represents the essential bridge data and logic => Finding partner, parsing and so on...
 public record BridgeSignData(
@@ -26,7 +25,7 @@ public record BridgeSignData(
 		float offsetX,
 		float offsetY,
 		float offsetZ,
-		TileState blockState
+		SignListener.SignWrapper wrapper
 	) {
 	
 	public static Optional<BridgeSignData> tryFindBridgeOnCraft(final Craft craft, final String bridgeName, Consumer<String> errorMessageHandler) {
@@ -36,10 +35,17 @@ public record BridgeSignData(
 		
 		for (MovecraftLocation ml : craft.getHitBox().asSet()) {
 			BlockState state = craft.getWorld().getBlockAt(ml.toBukkit(craft.getWorld())).getState();
-			if (state instanceof org.bukkit.block.Sign sign) {
-				Optional<BridgeSignData> tempResult = tryGetBridgeSignData(sign, errorMessageHandler);
-				if (tempResult.isPresent() && tempResult.get().isExitFor(bridgeName)) {
-					return tempResult;
+			if (state instanceof Sign sign) {
+				for (SignListener.SignWrapper wrapperTmp : SignListener.INSTANCE.getSignWrappers(sign, true)) {
+					AbstractCraftSign handlerSign = MovecraftSignRegistry.INSTANCE.getCraftSign(wrapperTmp.line(0));
+					if (handlerSign == null || !(handlerSign instanceof BridgeSign)) {
+						continue;
+					}
+
+					Optional<BridgeSignData> tempResult = tryGetBridgeSignData(wrapperTmp, errorMessageHandler);
+					if (tempResult.isPresent() && tempResult.get().isExitFor(bridgeName)) {
+						return tempResult;
+					}
 				}
 			}
 		}
@@ -49,27 +55,8 @@ public record BridgeSignData(
 	public boolean isExitFor(final String bridge) {
 		return ChatColor.stripColor(this.name).equals(ChatColor.stripColor(bridge));
 	}
-	
-	public static Optional<BridgeSignData> tryGetBridgeSignData(final Location location, final World world, Consumer<String> errorMessageHandler) {
-		return tryGetBridgeSignData(world.getBlockAt(location), errorMessageHandler);
-	}
-	
-	public static Optional<BridgeSignData> tryGetBridgeSignData(Block blockAt, Consumer<String> errorMessageHandler) {
-		if (blockAt.getState() instanceof org.bukkit.block.Sign sign) {
-			return tryGetBridgeSignData(sign, errorMessageHandler);
-		}
-		return Optional.empty();
-	}
-	
-	public static boolean validateSign(org.bukkit.block.Sign sign, Consumer<String> errorMessageHandler) {
-		return validateSign(sign.getLines(), errorMessageHandler);
-	}
-	
+
 	public static boolean validateSign(String[] lines, Consumer<String> errorMessageHandler) {
-		if (!lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_HEADER].equals(Constants.BRIDGE_SIGN_HEADER)) {
-			errorMessageHandler.accept("First line is not equals to " + Constants.BRIDGE_SIGN_HEADER);
-			return false;
-		}
 		if (lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME].isBlank() || lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME].isEmpty()) {
 			errorMessageHandler.accept("Bridge must have a name!");
 			return false;
@@ -107,8 +94,8 @@ public record BridgeSignData(
 		return true;
 	}
 
-	public static Optional<BridgeSignData> tryGetBridgeSignData(org.bukkit.block.Sign sign, Consumer<String> errorMessageHandler) {
-		String[] lines = sign.getLines();
+	public static Optional<BridgeSignData> tryGetBridgeSignData(SignListener.SignWrapper wrapper, Consumer<String> errorMessageHandler) {
+		String[] lines = wrapper.rawLines();
 		
 		if(!validateSign(lines, errorMessageHandler)) {
 			return Optional.empty();
@@ -131,34 +118,35 @@ public record BridgeSignData(
 			}
 		}
 		
-		return Optional.of(new BridgeSignData(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME], lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE], x, y, z, sign));
+		return Optional.of(new BridgeSignData(lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_NAME], lines[Constants.BridgeSignLineIndizes.BRIDGE_SIGN_INDEX_TARGET_BRIDGE], x, y, z, wrapper));
 	}
 
 	@Nullable
 	public Location getEffectiveLocation() {
-		Location loc = this.blockState.getLocation();
+		Location loc = this.wrapper.block().getLocation();
 		if (loc == null) {
 			return loc;
 		}
-		
-		if (this.blockState.getBlockData() instanceof WallSign ws) {
-			return this.getEffectiveLocation(ws, loc);
-		} else if (this.blockState.getBlockData() instanceof Sign s) {
-			return this.getEffectiveLocation(s, loc);
+
+		Vector vector = this.wrapper.facing().getDirection();
+		Location result = this.getEffectiveLocation(vector, loc);
+		if (result != null) {
+			return result;
 		}
+
 		return null;
 		
 	}
 
-	protected Location getEffectiveLocation(WallSign wallSignData, Location block) {
-		Vector shift = wallSignData.getFacing().getDirection();
-		return getEffectiveLocation(shift, block);
-	}
-	
-	protected Location getEffectiveLocation(Sign signData, Location block) {
-		Vector shift = signData.getRotation().getDirection();
-		return getEffectiveLocation(shift, block);
-	}
+//	protected Location getEffectiveLocation(WallSign wallSignData, Location block) {
+//		Vector shift = wallSignData.getFacing().getDirection();
+//		return getEffectiveLocation(shift, block);
+//	}
+//
+//	protected Location getEffectiveLocation(Sign signData, Location block) {
+//		Vector shift = signData.getRotation().getDirection();
+//		return getEffectiveLocation(shift, block);
+//	}
 	
 	protected Location getEffectiveLocation(Vector signDirection, Location block) {
 		// Get the centered location at that block

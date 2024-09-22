@@ -43,7 +43,7 @@ public class BridgeSign extends AbstractCraftSign {
 
     @Override
     protected boolean internalProcessSignWithCraft(Action action, SignListener.SignWrapper signWrapper, Craft craft, Player player) {
-        Optional<BridgeSignData> optBridge = BridgeSignData.tryGetBridgeSignData(signWrapper.block(), player::sendMessage);
+        Optional<BridgeSignData> optBridge = BridgeSignData.tryGetBridgeSignData(signWrapper, player::sendMessage);
         if (optBridge.isEmpty()) {
             player.sendMessage("Somehow the bridge sign could not be created but it was validated");
             return false;
